@@ -38,8 +38,8 @@ export RT_ID=$(grep -o '"RouteTableId": *"[^"]*"' ./configs/route_table.configs 
 aws ec2 create-route \
     --route-table-id $RT_ID \
     --destination-cidr-block 0.0.0.0/0 \
-    --gateway-id $IGW_ID >> ./logs
+    --gateway-id $IGW_ID >> ./configs/logs
 
 aws ec2 associate-route-table \
     --route-table-id $RT_ID \
-    --subnet-id $SBN_PUB_ID >> ./logs
+    --subnet-id $SBN_PUB_ID >> ./configs/logs

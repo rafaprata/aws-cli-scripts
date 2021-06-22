@@ -1,45 +1,73 @@
 #!/bin/bash
 
+export TAG_KEY="Name"
+export VPC_CIDR="70.125.0.0/16"
+export VPC_TAG="vpc-teste"
+export SBN_PRIV_CIDR="70.125.1.0/24"
+export SBN_PRIV_TAG="sbn-private-teste"
+export SBN_PUB_CIDR="70.125.2.0/24"
+export SBN_PUB_TAG="sbn-public-teste"
+export IGW_TAG="igw-public-teste"
+export RT_TAG="rt-teste"
+
 aws ec2 create-vpc \
-    --cidr-block "70.125.0.0/16" \
-    --tag-specifications 'ResourceType=vpc,Tags=[{Key=Name,Value=vpc-teste}]' > ./configs/vpc.configs
-
-export VPC_ID=$(grep -o '"VpcId": *"[^"]*"' ./configs/vpc.configs | grep -o '"[^"]*"$' | sed 's/"//g')
-
-aws ec2 create-subnet \
-    --cidr-block "70.125.1.0/24" \
-    --vpc-id $VPC_ID \
-    --tag-specifications 'ResourceType=subnet,Tags=[{Key=Name,Value=sbn-private-teste}]' > ./configs/subnet_private.configs
-
-export SBN_PRIV_ID=$(grep -o '"SubnetId": *"[^"]*"' ./configs/subnet_private.configs | grep -o '"[^"]*"$' | sed 's/"//g')
+    --cidr-block $VPC_CIDR \
+    --tag-specifications 'ResourceType=vpc,Tags=[{Key='$TAG_KEY',Value='$VPC_TAG'}]' \
+     | echo "Created VPC - OK"
+export VPC_ID=$(aws ec2 describe-vpcs \
+    --filter 'Name=tag:'$TAG_KEY',Values='$VPC_TAG'' \
+     | grep -o '"VpcId": *"[^"]*"' | grep -o '"[^"]*"$' \
+     | sed 's/"//g')
 
 aws ec2 create-subnet \
-    --cidr-block "70.125.2.0/24" \
+    --cidr-block $SBN_PRIV_CIDR \
     --vpc-id $VPC_ID \
-    --tag-specifications 'ResourceType=subnet,Tags=[{Key=Name,Value=sbn-public-teste}]' > ./configs/subnet_public.configs
+    --tag-specifications 'ResourceType=subnet,Tags=[{Key='$TAG_KEY',Value='$SBN_PRIV_TAG'}]' \
+     | echo "Created Subnet Private - OK"
+export SBN_PRIV_ID=$(aws ec2 describe-subnets \
+    --filter 'Name=tag:'$TAG_KEY',Values='$SBN_PRIV_TAG'' \
+     | grep -o '"SubnetId": *"[^"]*"' \
+     | grep -o '"[^"]*"$' \
+     | sed 's/"//g')
 
-export SBN_PUB_ID=$(grep -o '"SubnetId": *"[^"]*"' ./configs/subnet_public.configs | grep -o '"[^"]*"$' | sed 's/"//g')
+aws ec2 create-subnet \
+    --cidr-block $SBN_PUB_CIDR \
+    --vpc-id $VPC_ID \
+    --tag-specifications 'ResourceType=subnet,Tags=[{Key='$TAG_KEY',Value='$SBN_PUB_TAG'}]' \
+     | echo "Created Subnet Public - OK"
+export SBN_PUB_ID=$(aws ec2 describe-subnets \
+    --filter 'Name=tag:'$TAG_KEY',Values='$SBN_PUB_TAG'' \
+     | grep -o '"SubnetId": *"[^"]*"' \
+     | grep -o '"[^"]*"$' | sed 's/"//g')
 
 aws ec2 create-internet-gateway \
-    --tag-specifications 'ResourceType=internet-gateway,Tags=[{Key=Name,Value=igw-public-teste}]' > ./configs/igw.configs
-
-export IGW_ID=$(grep -o '"InternetGatewayId": *"[^"]*"' ./configs/igw.configs | grep -o '"[^"]*"$' | sed 's/"//g')
-
+    --tag-specifications 'ResourceType=internet-gateway,Tags=[{Key='$TAG_KEY',Value='$IGW_TAG'}]' \
+     | echo "Created Internet Gateway - OK"
+export IGW_ID=$(aws ec2 describe-internet-gateways \
+    --filter 'Name=tag:'$TAG_KEY',Values='$IGW_TAG'' \
+     | grep -o '"InternetGatewayId": *"[^"]*"' \
+     | grep -o '"[^"]*"$' \
+     | sed 's/"//g')
 aws ec2 attach-internet-gateway \
     --internet-gateway-id $IGW_ID \
     --vpc-id $VPC_ID
 
 aws ec2 create-route-table \
     --vpc-id $VPC_ID \
-    --tag-specifications 'ResourceType=route-table,Tags=[{Key=Name,Value=rt-teste}]' > ./configs/route_table.configs
-
-export RT_ID=$(grep -o '"RouteTableId": *"[^"]*"' ./configs/route_table.configs | grep -o '"[^"]*"$' | sed 's/"//g')
-
+    --tag-specifications 'ResourceType=route-table,Tags=[{Key='$TAG_KEY',Value='$RT_TAG'}]' \
+     | echo "Created Route-Table - OK"
+export RT_ID=$(aws ec2 describe-route-tables \
+    --filters 'Name=tag:'$TAG_KEY',Values='$RT_TAG'' \
+     | grep -o '"RouteTableId": *"[^"]*"' \
+     | grep -o '"[^"]*"$' \
+     | sed 's/"//g')
 aws ec2 create-route \
     --route-table-id $RT_ID \
     --destination-cidr-block 0.0.0.0/0 \
-    --gateway-id $IGW_ID >> ./configs/logs
+    --gateway-id $IGW_ID \
+     | echo "Created Route - OK" 
 
 aws ec2 associate-route-table \
     --route-table-id $RT_ID \
-    --subnet-id $SBN_PUB_ID >> ./configs/logs
+    --subnet-id $SBN_PUB_ID \
+     | echo "Created Route-Table Association - OK"

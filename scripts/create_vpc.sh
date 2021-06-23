@@ -9,6 +9,9 @@ export SBN_PUB_CIDR="70.125.2.0/24"
 export SBN_PUB_TAG="sbn-public-teste"
 export IGW_TAG="igw-public-teste"
 export RT_TAG="rt-teste"
+export SG_TAG="acesso-SSH"
+
+#CREATE VPC COMMANDS
 
 aws ec2 create-vpc \
     --cidr-block $VPC_CIDR \
@@ -71,3 +74,23 @@ aws ec2 associate-route-table \
     --route-table-id $RT_ID \
     --subnet-id $SBN_PUB_ID  >> configs/logs
 echo "Created Route-Table Association - OK"
+
+#CREATE SECURITY GROUPS COMMANDS
+
+aws ec2 create-security-group \
+    --description acesso-SSH \
+    --group-name acesso-SSH \
+    --vpc-id $VPC_ID \
+    --tag-specifications 'ResourceType=security-group,Tags=[{Key='$TAG_KEY',Value='$SG_TAG'}]' >> configs/logs
+echo "Created Security Group - OK"
+export SG_SSH_ID=$(aws ec2 describe-security-groups \
+    --filters 'Name=tag:'$TAG_KEY',Values='$SG_TAG'' \
+     | grep -o '"GroupId": *"[^"]*"' \
+     | grep -o '"[^"]*"$' \
+     | sed 's/"//g')
+
+aws ec2 authorize-security-group-ingress \
+    --group-id $SG_SSH_ID \
+    --protocol tcp \
+    --port 22 \
+    --cidr 0.0.0.0/0

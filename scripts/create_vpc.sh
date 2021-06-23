@@ -12,8 +12,8 @@ export RT_TAG="rt-teste"
 
 aws ec2 create-vpc \
     --cidr-block $VPC_CIDR \
-    --tag-specifications 'ResourceType=vpc,Tags=[{Key='$TAG_KEY',Value='$VPC_TAG'}]' \
-     | echo "Created VPC - OK"
+    --tag-specifications 'ResourceType=vpc,Tags=[{Key='$TAG_KEY',Value='$VPC_TAG'}]'  >> configs/logs
+echo "Created VPC - OK"
 export VPC_ID=$(aws ec2 describe-vpcs \
     --filter 'Name=tag:'$TAG_KEY',Values='$VPC_TAG'' \
      | grep -o '"VpcId": *"[^"]*"' | grep -o '"[^"]*"$' \
@@ -22,8 +22,8 @@ export VPC_ID=$(aws ec2 describe-vpcs \
 aws ec2 create-subnet \
     --cidr-block $SBN_PRIV_CIDR \
     --vpc-id $VPC_ID \
-    --tag-specifications 'ResourceType=subnet,Tags=[{Key='$TAG_KEY',Value='$SBN_PRIV_TAG'}]' \
-     | echo "Created Subnet Private - OK"
+    --tag-specifications 'ResourceType=subnet,Tags=[{Key='$TAG_KEY',Value='$SBN_PRIV_TAG'}]'  >> configs/logs
+echo "Created Subnet Private - OK"
 export SBN_PRIV_ID=$(aws ec2 describe-subnets \
     --filter 'Name=tag:'$TAG_KEY',Values='$SBN_PRIV_TAG'' \
      | grep -o '"SubnetId": *"[^"]*"' \
@@ -33,16 +33,16 @@ export SBN_PRIV_ID=$(aws ec2 describe-subnets \
 aws ec2 create-subnet \
     --cidr-block $SBN_PUB_CIDR \
     --vpc-id $VPC_ID \
-    --tag-specifications 'ResourceType=subnet,Tags=[{Key='$TAG_KEY',Value='$SBN_PUB_TAG'}]' \
-     | echo "Created Subnet Public - OK"
+    --tag-specifications 'ResourceType=subnet,Tags=[{Key='$TAG_KEY',Value='$SBN_PUB_TAG'}]'  >> configs/logs
+echo "Created Subnet Public - OK"
 export SBN_PUB_ID=$(aws ec2 describe-subnets \
     --filter 'Name=tag:'$TAG_KEY',Values='$SBN_PUB_TAG'' \
      | grep -o '"SubnetId": *"[^"]*"' \
      | grep -o '"[^"]*"$' | sed 's/"//g')
 
 aws ec2 create-internet-gateway \
-    --tag-specifications 'ResourceType=internet-gateway,Tags=[{Key='$TAG_KEY',Value='$IGW_TAG'}]' \
-     | echo "Created Internet Gateway - OK"
+    --tag-specifications 'ResourceType=internet-gateway,Tags=[{Key='$TAG_KEY',Value='$IGW_TAG'}]'  >> configs/logs
+echo "Created Internet Gateway - OK"
 export IGW_ID=$(aws ec2 describe-internet-gateways \
     --filter 'Name=tag:'$TAG_KEY',Values='$IGW_TAG'' \
      | grep -o '"InternetGatewayId": *"[^"]*"' \
@@ -54,8 +54,8 @@ aws ec2 attach-internet-gateway \
 
 aws ec2 create-route-table \
     --vpc-id $VPC_ID \
-    --tag-specifications 'ResourceType=route-table,Tags=[{Key='$TAG_KEY',Value='$RT_TAG'}]' \
-     | echo "Created Route-Table - OK"
+    --tag-specifications 'ResourceType=route-table,Tags=[{Key='$TAG_KEY',Value='$RT_TAG'}]'  >> configs/logs
+echo "Created Route-Table - OK"
 export RT_ID=$(aws ec2 describe-route-tables \
     --filters 'Name=tag:'$TAG_KEY',Values='$RT_TAG'' \
      | grep -o '"RouteTableId": *"[^"]*"' \
@@ -64,10 +64,10 @@ export RT_ID=$(aws ec2 describe-route-tables \
 aws ec2 create-route \
     --route-table-id $RT_ID \
     --destination-cidr-block 0.0.0.0/0 \
-    --gateway-id $IGW_ID \
-     | echo "Created Route - OK" 
+    --gateway-id $IGW_ID  >> configs/logs
+echo "Created Route - OK" 
 
 aws ec2 associate-route-table \
     --route-table-id $RT_ID \
-    --subnet-id $SBN_PUB_ID \
-     | echo "Created Route-Table Association - OK"
+    --subnet-id $SBN_PUB_ID  >> configs/logs
+echo "Created Route-Table Association - OK"

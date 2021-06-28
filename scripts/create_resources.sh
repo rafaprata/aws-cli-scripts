@@ -2,6 +2,8 @@
 
 #CREATE VPC COMMANDS
 
+echo "###START CREATION SCRIPT###" >> configs/logs
+
 aws ec2 create-vpc \
     --cidr-block $VPC_CIDR \
     --tag-specifications 'ResourceType=vpc,Tags=[{Key='$TAG_KEY',Value='$VPC_TAG'}]'  >> configs/logs
@@ -95,3 +97,9 @@ aws ec2 run-instances \
     --count $QTD_INST \
     --associate-public-ip-address >> configs/logs
 echo "Created EC2 Instance - OK"
+export EC2_ID=$(aws ec2 describe-instances \
+    --filters 'Name=tag:'$TAG_KEY',Values='$EC2_TAG''\
+    | grep -o '"InstanceId": *"[^"]*"'\
+    | grep -o '"[^"]*"$' | sed 's/"//g')
+
+echo "###FINISH CREATION SCRIPT###" >> configs/logs

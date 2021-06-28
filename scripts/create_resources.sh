@@ -10,6 +10,11 @@ export SBN_PUB_TAG="sbn-public-teste"
 export IGW_TAG="igw-public-teste"
 export RT_TAG="rt-teste"
 export SG_TAG="acesso-SSH"
+export KEY_NAME="rafael-souza-estudos"
+export IMAGE_ID="ami-0d382e80be7ffdae5"
+export INST_TYPE="t2.micro"
+export QTD_INST=1
+export EC2_TAG="ec2-pub-estudo"
 
 #CREATE VPC COMMANDS
 
@@ -94,3 +99,15 @@ aws ec2 authorize-security-group-ingress \
     --protocol tcp \
     --port 22 \
     --cidr 0.0.0.0/0
+
+#CREATE EC2 INSTANCES COMMANDS
+aws ec2 run-instances \
+    --image-id $IMAGE_ID \
+    --instance-type $INST_TYPE \
+    --key-name $KEY_NAME \
+    --security-group-ids $SG_SSH_ID \
+    --subnet-id $SBN_PUB_ID \
+    --tag-specifications 'ResourceType=instance,Tags=[{Key='$TAG_KEY',Value='$EC2_TAG'}]' \
+    --count $QTD_INST \
+    --associate-public-ip-address >> configs/logs
+echo "Created EC2 Instance - OK"
